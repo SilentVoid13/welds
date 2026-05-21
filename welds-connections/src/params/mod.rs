@@ -20,17 +20,33 @@ use super::postgres::PostgresParam;
 #[cfg(feature = "mysql")]
 use super::mysql::MysqlParam;
 
-#[cfg(all(feature = "sqlite-sync"))]
+#[cfg(any(feature = "turso", feature = "turso-sync"))]
+use super::turso::TursoParam;
+
+#[cfg(all(feature = "sqlite-sync", not(feature = "turso-sync")))]
 pub trait Param: SqliteSyncParam + rusqlite::types::ToSql {}
 
-#[cfg(all(feature = "sqlite-sync"))]
+#[cfg(all(feature = "sqlite-sync", not(feature = "turso-sync")))]
 impl<T> Param for T where T: rusqlite::types::FromSql + rusqlite::types::ToSql {}
+
+#[cfg(all(feature = "turso-sync", not(feature = "sqlite-sync")))]
+pub trait Param: TursoParam {}
+
+#[cfg(all(feature = "turso-sync", not(feature = "sqlite-sync")))]
+impl<T> Param for T where T: TursoParam {}
+
+#[cfg(all(feature = "sqlite-sync", feature = "turso-sync"))]
+pub trait Param: SqliteSyncParam + rusqlite::types::ToSql + TursoParam {}
+
+#[cfg(all(feature = "sqlite-sync", feature = "turso-sync"))]
+impl<T> Param for T where T: rusqlite::types::FromSql + rusqlite::types::ToSql + TursoParam {}
 
 #[cfg(all(
     feature = "sqlite",
     not(feature = "postgres"),
     not(feature = "mysql"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 pub trait Param: SqliteParam {}
 
@@ -38,7 +54,8 @@ pub trait Param: SqliteParam {}
     feature = "sqlite",
     not(feature = "postgres"),
     not(feature = "mysql"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 impl<T> Param for T
 where
@@ -51,7 +68,8 @@ where
     feature = "postgres",
     not(feature = "sqlite"),
     not(feature = "mysql"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 pub trait Param: PostgresParam {}
 
@@ -59,7 +77,8 @@ pub trait Param: PostgresParam {}
     feature = "postgres",
     not(feature = "sqlite"),
     not(feature = "mysql"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 impl<T> Param for T
 where
@@ -72,7 +91,8 @@ where
     feature = "mysql",
     not(feature = "sqlite"),
     not(feature = "postgres"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 pub trait Param: MysqlParam {}
 
@@ -80,7 +100,8 @@ pub trait Param: MysqlParam {}
     feature = "mysql",
     not(feature = "sqlite"),
     not(feature = "postgres"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 impl<T> Param for T
 where
@@ -93,7 +114,8 @@ where
     feature = "mssql",
     not(feature = "sqlite"),
     not(feature = "postgres"),
-    not(feature = "mysql")
+    not(feature = "mysql"),
+    not(feature = "turso")
 ))]
 pub trait Param: MssqlParam {}
 
@@ -101,7 +123,8 @@ pub trait Param: MssqlParam {}
     feature = "mssql",
     not(feature = "sqlite"),
     not(feature = "postgres"),
-    not(feature = "mysql")
+    not(feature = "mysql"),
+    not(feature = "turso")
 ))]
 impl<T> Param for T
 where
@@ -111,10 +134,34 @@ where
 }
 
 #[cfg(all(
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "postgres"),
+    not(feature = "mysql"),
+    not(feature = "mssql")
+))]
+pub trait Param: TursoParam {}
+
+#[cfg(all(
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "postgres"),
+    not(feature = "mysql"),
+    not(feature = "mssql")
+))]
+impl<T> Param for T
+where
+    T: TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
     feature = "sqlite",
     feature = "postgres",
     not(feature = "mysql"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 pub trait Param: SqliteParam + PostgresParam {}
 
@@ -122,7 +169,8 @@ pub trait Param: SqliteParam + PostgresParam {}
     feature = "sqlite",
     feature = "postgres",
     not(feature = "mysql"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 impl<T> Param for T
 where
@@ -140,7 +188,8 @@ where
     feature = "sqlite",
     feature = "mysql",
     not(feature = "postgres"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 pub trait Param: SqliteParam + MysqlParam {}
 
@@ -148,7 +197,8 @@ pub trait Param: SqliteParam + MysqlParam {}
     feature = "sqlite",
     feature = "mysql",
     not(feature = "postgres"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 impl<T> Param for T
 where
@@ -166,7 +216,8 @@ where
     feature = "sqlite",
     feature = "mssql",
     not(feature = "postgres"),
-    not(feature = "mysql")
+    not(feature = "mysql"),
+    not(feature = "turso")
 ))]
 pub trait Param: SqliteParam + MssqlParam {}
 
@@ -174,7 +225,8 @@ pub trait Param: SqliteParam + MssqlParam {}
     feature = "sqlite",
     feature = "mssql",
     not(feature = "postgres"),
-    not(feature = "mysql")
+    not(feature = "mysql"),
+    not(feature = "turso")
 ))]
 impl<T> Param for T
 where
@@ -184,10 +236,34 @@ where
 }
 
 #[cfg(all(
+    feature = "sqlite",
+    feature = "turso",
+    not(feature = "postgres"),
+    not(feature = "mysql"),
+    not(feature = "mssql")
+))]
+pub trait Param: SqliteParam + TursoParam {}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "turso",
+    not(feature = "postgres"),
+    not(feature = "mysql"),
+    not(feature = "mssql")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a + Send + Encode<'a, sqlx::Sqlite> + Type<sqlx::Sqlite> + TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
     feature = "postgres",
     feature = "mysql",
     not(feature = "sqlite"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 pub trait Param: PostgresParam + MysqlParam {}
 
@@ -195,7 +271,8 @@ pub trait Param: PostgresParam + MysqlParam {}
     feature = "postgres",
     feature = "mysql",
     not(feature = "sqlite"),
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 impl<T> Param for T
 where
@@ -213,7 +290,8 @@ where
     feature = "postgres",
     feature = "mssql",
     not(feature = "sqlite"),
-    not(feature = "mysql")
+    not(feature = "mysql"),
+    not(feature = "turso")
 ))]
 pub trait Param: PostgresParam + MssqlParam {}
 
@@ -221,7 +299,8 @@ pub trait Param: PostgresParam + MssqlParam {}
     feature = "postgres",
     feature = "mssql",
     not(feature = "sqlite"),
-    not(feature = "mysql")
+    not(feature = "mysql"),
+    not(feature = "turso")
 ))]
 impl<T> Param for T
 where
@@ -231,10 +310,34 @@ where
 }
 
 #[cfg(all(
+    feature = "postgres",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "mysql"),
+    not(feature = "mssql")
+))]
+pub trait Param: PostgresParam + TursoParam {}
+
+#[cfg(all(
+    feature = "postgres",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "mysql"),
+    not(feature = "mssql")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a + Send + Encode<'a, sqlx::Postgres> + Type<sqlx::Postgres> + TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
     feature = "mysql",
     feature = "mssql",
     not(feature = "sqlite"),
-    not(feature = "postgres")
+    not(feature = "postgres"),
+    not(feature = "turso")
 ))]
 pub trait Param: MysqlParam + MssqlParam {}
 
@@ -242,7 +345,8 @@ pub trait Param: MysqlParam + MssqlParam {}
     feature = "mysql",
     feature = "mssql",
     not(feature = "sqlite"),
-    not(feature = "postgres")
+    not(feature = "postgres"),
+    not(feature = "turso")
 ))]
 impl<T> Param for T
 where
@@ -252,10 +356,57 @@ where
 }
 
 #[cfg(all(
+    feature = "mysql",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "postgres"),
+    not(feature = "mssql")
+))]
+pub trait Param: MysqlParam + TursoParam {}
+
+#[cfg(all(
+    feature = "mysql",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "postgres"),
+    not(feature = "mssql")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a + Send + Encode<'a, sqlx::MySql> + Type<sqlx::MySql> + TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "mssql",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "postgres"),
+    not(feature = "mysql")
+))]
+pub trait Param: MssqlParam + TursoParam {}
+
+#[cfg(all(
+    feature = "mssql",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "postgres"),
+    not(feature = "mysql")
+))]
+impl<T> Param for T
+where
+    T: MssqlParam + TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
     feature = "sqlite",
     feature = "postgres",
     feature = "mysql",
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 pub trait Param: SqliteParam + PostgresParam + MysqlParam {}
 
@@ -263,7 +414,8 @@ pub trait Param: SqliteParam + PostgresParam + MysqlParam {}
     feature = "sqlite",
     feature = "postgres",
     feature = "mysql",
-    not(feature = "mssql")
+    not(feature = "mssql"),
+    not(feature = "turso")
 ))]
 impl<T> Param for T
 where
@@ -283,7 +435,8 @@ where
     feature = "sqlite",
     feature = "postgres",
     feature = "mssql",
-    not(feature = "mysql")
+    not(feature = "mysql"),
+    not(feature = "turso")
 ))]
 pub trait Param: SqliteParam + PostgresParam + MssqlParam {}
 
@@ -291,6 +444,313 @@ pub trait Param: SqliteParam + PostgresParam + MssqlParam {}
     feature = "sqlite",
     feature = "postgres",
     feature = "mssql",
+    not(feature = "mysql"),
+    not(feature = "turso")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a
+        + Send
+        + Encode<'a, sqlx::Sqlite>
+        + Type<sqlx::Sqlite>
+        + Encode<'a, sqlx::Postgres>
+        + Type<sqlx::Postgres>
+        + MssqlParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "postgres",
+    feature = "turso",
+    not(feature = "mysql"),
+    not(feature = "mssql")
+))]
+pub trait Param: SqliteParam + PostgresParam + TursoParam {}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "postgres",
+    feature = "turso",
+    not(feature = "mysql"),
+    not(feature = "mssql")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a
+        + Send
+        + Encode<'a, sqlx::Sqlite>
+        + Type<sqlx::Sqlite>
+        + Encode<'a, sqlx::Postgres>
+        + Type<sqlx::Postgres>
+        + TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "mysql",
+    feature = "mssql",
+    not(feature = "postgres"),
+    not(feature = "turso")
+))]
+pub trait Param: SqliteParam + MysqlParam + MssqlParam {}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "mysql",
+    feature = "mssql",
+    not(feature = "postgres"),
+    not(feature = "turso")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a
+        + Send
+        + Encode<'a, sqlx::Sqlite>
+        + Type<sqlx::Sqlite>
+        + Encode<'a, sqlx::MySql>
+        + Type<sqlx::MySql>
+        + MssqlParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "mysql",
+    feature = "turso",
+    not(feature = "postgres"),
+    not(feature = "mssql")
+))]
+pub trait Param: SqliteParam + MysqlParam + TursoParam {}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "mysql",
+    feature = "turso",
+    not(feature = "postgres"),
+    not(feature = "mssql")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a
+        + Send
+        + Encode<'a, sqlx::Sqlite>
+        + Type<sqlx::Sqlite>
+        + Encode<'a, sqlx::MySql>
+        + Type<sqlx::MySql>
+        + TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "mssql",
+    feature = "turso",
+    not(feature = "postgres"),
+    not(feature = "mysql")
+))]
+pub trait Param: SqliteParam + MssqlParam + TursoParam {}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "mssql",
+    feature = "turso",
+    not(feature = "postgres"),
+    not(feature = "mysql")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a + Send + Encode<'a, sqlx::Sqlite> + Type<sqlx::Sqlite> + MssqlParam + TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "postgres",
+    feature = "mysql",
+    feature = "mssql",
+    not(feature = "sqlite"),
+    not(feature = "turso")
+))]
+pub trait Param: PostgresParam + MysqlParam + MssqlParam {}
+
+#[cfg(all(
+    feature = "postgres",
+    feature = "mysql",
+    feature = "mssql",
+    not(feature = "sqlite"),
+    not(feature = "turso")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a
+        + Send
+        + Encode<'a, sqlx::Postgres>
+        + Type<sqlx::Postgres>
+        + Encode<'a, sqlx::MySql>
+        + Type<sqlx::MySql>
+        + MssqlParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "postgres",
+    feature = "mysql",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "mssql")
+))]
+pub trait Param: PostgresParam + MysqlParam + TursoParam {}
+
+#[cfg(all(
+    feature = "postgres",
+    feature = "mysql",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "mssql")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a
+        + Send
+        + Encode<'a, sqlx::Postgres>
+        + Type<sqlx::Postgres>
+        + Encode<'a, sqlx::MySql>
+        + Type<sqlx::MySql>
+        + TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "postgres",
+    feature = "mssql",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "mysql")
+))]
+pub trait Param: PostgresParam + MssqlParam + TursoParam {}
+
+#[cfg(all(
+    feature = "postgres",
+    feature = "mssql",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "mysql")
+))]
+impl<T> Param for T
+where
+    for<'a> T:
+        'a + Send + Encode<'a, sqlx::Postgres> + Type<sqlx::Postgres> + MssqlParam + TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "mysql",
+    feature = "mssql",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "postgres")
+))]
+pub trait Param: MysqlParam + MssqlParam + TursoParam {}
+
+#[cfg(all(
+    feature = "mysql",
+    feature = "mssql",
+    feature = "turso",
+    not(feature = "sqlite"),
+    not(feature = "postgres")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a + Send + Encode<'a, sqlx::MySql> + Type<sqlx::MySql> + MssqlParam + TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "postgres",
+    feature = "mysql",
+    feature = "mssql",
+    not(feature = "turso")
+))]
+pub trait Param: SqliteParam + PostgresParam + MysqlParam + MssqlParam {}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "postgres",
+    feature = "mysql",
+    feature = "mssql",
+    not(feature = "turso")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a
+        + Send
+        + Encode<'a, sqlx::Sqlite>
+        + Type<sqlx::Sqlite>
+        + Encode<'a, sqlx::Postgres>
+        + Type<sqlx::Postgres>
+        + Encode<'a, sqlx::MySql>
+        + Type<sqlx::MySql>
+        + MssqlParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "postgres",
+    feature = "mysql",
+    feature = "turso",
+    not(feature = "mssql")
+))]
+pub trait Param: SqliteParam + PostgresParam + MysqlParam + TursoParam {}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "postgres",
+    feature = "mysql",
+    feature = "turso",
+    not(feature = "mssql")
+))]
+impl<T> Param for T
+where
+    for<'a> T: 'a
+        + Send
+        + Encode<'a, sqlx::Sqlite>
+        + Type<sqlx::Sqlite>
+        + Encode<'a, sqlx::Postgres>
+        + Type<sqlx::Postgres>
+        + Encode<'a, sqlx::MySql>
+        + Type<sqlx::MySql>
+        + TursoParam,
+    for<'a> &'a T: Send,
+{
+}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "postgres",
+    feature = "mssql",
+    feature = "turso",
+    not(feature = "mysql")
+))]
+pub trait Param: SqliteParam + PostgresParam + MssqlParam + TursoParam {}
+
+#[cfg(all(
+    feature = "sqlite",
+    feature = "postgres",
+    feature = "mssql",
+    feature = "turso",
     not(feature = "mysql")
 ))]
 impl<T> Param for T
@@ -301,7 +761,8 @@ where
         + Type<sqlx::Sqlite>
         + Encode<'a, sqlx::Postgres>
         + Type<sqlx::Postgres>
-        + MssqlParam,
+        + MssqlParam
+        + TursoParam,
     for<'a> &'a T: Send,
 {
 }
@@ -310,14 +771,16 @@ where
     feature = "sqlite",
     feature = "mysql",
     feature = "mssql",
+    feature = "turso",
     not(feature = "postgres")
 ))]
-pub trait Param: SqliteParam + MysqlParam + MssqlParam {}
+pub trait Param: SqliteParam + MysqlParam + MssqlParam + TursoParam {}
 
 #[cfg(all(
     feature = "sqlite",
     feature = "mysql",
     feature = "mssql",
+    feature = "turso",
     not(feature = "postgres")
 ))]
 impl<T> Param for T
@@ -328,7 +791,8 @@ where
         + Type<sqlx::Sqlite>
         + Encode<'a, sqlx::MySql>
         + Type<sqlx::MySql>
-        + MssqlParam,
+        + MssqlParam
+        + TursoParam,
     for<'a> &'a T: Send,
 {
 }
@@ -337,14 +801,16 @@ where
     feature = "postgres",
     feature = "mysql",
     feature = "mssql",
+    feature = "turso",
     not(feature = "sqlite")
 ))]
-pub trait Param: PostgresParam + MysqlParam + MssqlParam {}
+pub trait Param: PostgresParam + MysqlParam + MssqlParam + TursoParam {}
 
 #[cfg(all(
     feature = "postgres",
     feature = "mysql",
     feature = "mssql",
+    feature = "turso",
     not(feature = "sqlite")
 ))]
 impl<T> Param for T
@@ -355,7 +821,8 @@ where
         + Type<sqlx::Postgres>
         + Encode<'a, sqlx::MySql>
         + Type<sqlx::MySql>
-        + MssqlParam,
+        + MssqlParam
+        + TursoParam,
     for<'a> &'a T: Send,
 {
 }
@@ -364,15 +831,17 @@ where
     feature = "sqlite",
     feature = "postgres",
     feature = "mysql",
-    feature = "mssql"
+    feature = "mssql",
+    feature = "turso"
 ))]
-pub trait Param: SqliteParam + PostgresParam + MysqlParam + MssqlParam {}
+pub trait Param: SqliteParam + PostgresParam + MysqlParam + MssqlParam + TursoParam {}
 
 #[cfg(all(
     feature = "sqlite",
     feature = "postgres",
     feature = "mysql",
-    feature = "mssql"
+    feature = "mssql",
+    feature = "turso"
 ))]
 impl<T> Param for T
 where
@@ -384,7 +853,8 @@ where
         + Type<sqlx::Postgres>
         + Encode<'a, sqlx::MySql>
         + Type<sqlx::MySql>
-        + MssqlParam,
+        + MssqlParam
+        + TursoParam,
     for<'a> &'a T: Send,
 {
 }

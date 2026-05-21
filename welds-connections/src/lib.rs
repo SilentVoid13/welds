@@ -20,6 +20,8 @@ pub mod sqlite;
 pub mod sqlite_sync;
 pub mod trace;
 pub mod transaction;
+#[cfg(any(feature = "turso", feature = "turso-sync"))]
+pub mod turso;
 
 #[cfg(feature = "unstable-api")]
 use futures_core::stream::BoxStream;
@@ -121,6 +123,18 @@ pub async fn connect(cs: impl Into<String>) -> Result<any::AnyClient> {
         log::debug!("Welds connecting to Sqlite (Sync)");
         let client = sqlite_sync::connect(&cs)?;
         return Ok(any::AnyClient::SqliteSync(client));
+    }
+    #[cfg(feature = "turso")]
+    if cs.starts_with("turso:") {
+        log::debug!("Welds connecting to Turso");
+        let client = turso::connect(&cs).await?;
+        return Ok(any::AnyClient::Turso(client));
+    }
+    #[cfg(feature = "turso-sync")]
+    if cs.starts_with("turso:") {
+        log::debug!("Welds connecting to Turso (Sync)");
+        let client = turso::connect(&cs)?;
+        return Ok(any::AnyClient::TursoSync(client));
     }
     #[cfg(feature = "mssql")]
     if !cs.is_empty() {

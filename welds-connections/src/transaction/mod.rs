@@ -11,6 +11,12 @@ use crate::mssql::transaction::MssqlTransaction;
 #[cfg(feature = "sqlite-sync")]
 use crate::sqlite_sync::SqliteSyncTransaction;
 
+#[cfg(feature = "turso")]
+use crate::turso::TursoTransaction;
+
+#[cfg(feature = "turso-sync")]
+use crate::turso::TursoSyncTransaction;
+
 pub struct Transaction<'t> {
     inner: Mutex<Option<TransT<'t>>>,
     syntax: crate::Syntax,
@@ -30,6 +36,10 @@ impl<'t> Transaction<'t> {
             TransT::Postgres(_) => Syntax::Postgres,
             #[cfg(feature = "mysql")]
             TransT::Mysql(_) => Syntax::Mysql,
+            #[cfg(feature = "turso")]
+            TransT::Turso(_) => Syntax::Sqlite,
+            #[cfg(feature = "turso-sync")]
+            TransT::TursoSync(_) => Syntax::Sqlite,
         };
 
         Self {
@@ -86,6 +96,10 @@ pub(crate) enum TransT<'t> {
     Mysql(sqlx::Transaction<'t, sqlx::MySql>),
     #[cfg(feature = "mssql")]
     Mssql(MssqlTransaction<'t>),
+    #[cfg(feature = "turso")]
+    Turso(TursoTransaction<'t>),
+    #[cfg(feature = "turso-sync")]
+    TursoSync(TursoSyncTransaction<'t>),
 }
 
 #[maybe_async::maybe_async]
@@ -102,6 +116,10 @@ impl TransT<'_> {
             TransT::Postgres(t) => t.rollback().await?,
             #[cfg(feature = "mysql")]
             TransT::Mysql(t) => t.rollback().await?,
+            #[cfg(feature = "turso")]
+            TransT::Turso(t) => t.rollback().await?,
+            #[cfg(feature = "turso-sync")]
+            TransT::TursoSync(t) => t.rollback()?,
         }
         Ok(())
     }
@@ -117,6 +135,10 @@ impl TransT<'_> {
             TransT::Postgres(t) => t.commit().await?,
             #[cfg(feature = "mysql")]
             TransT::Mysql(t) => t.commit().await?,
+            #[cfg(feature = "turso")]
+            TransT::Turso(t) => t.commit().await?,
+            #[cfg(feature = "turso-sync")]
+            TransT::TursoSync(t) => t.commit()?,
         }
         Ok(())
     }
@@ -242,6 +264,16 @@ async fn execute_inner(
             }
             result
         }
+
+        #[cfg(feature = "turso")]
+        TransT::Turso(t) => {
+            let p = crate::turso::build_params(params);
+            let n = t.guard.execute(sql, p).await?;
+            Ok(ExecuteResult::new(n))
+        }
+
+        #[cfg(feature = "turso-sync")]
+        TransT::TursoSync(t) => crate::turso::run_execute(&t.handle, &t.guard, sql, params),
     }
 }
 
@@ -324,5 +356,14 @@ async fn fetch_rows_inner(
             }
             result
         }
+
+        #[cfg(feature = "turso")]
+        TransT::Turso(t) => {
+            let p = crate::turso::build_params(params);
+            crate::turso::fetch_rows_on_conn(&t.guard, sql, p).await
+        }
+
+        #[cfg(feature = "turso-sync")]
+        TransT::TursoSync(t) => crate::turso::run_fetch_rows(&t.handle, &t.guard, sql, params),
     }
 }

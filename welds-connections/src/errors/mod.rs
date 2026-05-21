@@ -12,6 +12,8 @@ pub enum Error {
     Tiberius(tiberius::error::Error),
     #[cfg(feature = "sqlite-sync")]
     Rusqlite(rusqlite::Error),
+    #[cfg(any(feature = "turso", feature = "turso-sync"))]
+    Turso(turso::Error),
     InvalidDatabaseUrl,
     RowNowFound,
     PoolError,
@@ -30,6 +32,8 @@ impl Display for Error {
             Error::Sqlx(err) => err.to_string(),
             #[cfg(feature = "sqlite-sync")]
             Error::Rusqlite(err) => err.to_string(),
+            #[cfg(any(feature = "turso", feature = "turso-sync"))]
+            Error::Turso(err) => err.to_string(),
             #[cfg(feature = "mssql")]
             Error::TiberiusConnPool(err) => err.to_string(),
             #[cfg(feature = "mssql")]
@@ -88,5 +92,12 @@ impl From<tiberius::error::Error> for Error {
 impl From<rusqlite::Error> for Error {
     fn from(inner: rusqlite::Error) -> Self {
         Error::Rusqlite(inner)
+    }
+}
+
+#[cfg(any(feature = "turso", feature = "turso-sync"))]
+impl From<turso::Error> for Error {
+    fn from(inner: turso::Error) -> Self {
+        Error::Turso(inner)
     }
 }

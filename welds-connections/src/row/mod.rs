@@ -17,6 +17,9 @@ use sqlx::Row as SqlxRow;
 #[cfg(feature = "sqlite-sync")]
 use crate::sqlite_sync::SqliteSyncOwnedRow as SqliteSyncRow;
 
+#[cfg(any(feature = "turso", feature = "turso-sync"))]
+use crate::turso::TursoOwnedRow;
+
 #[cfg(feature = "mssql")]
 use tiberius::Row as MssqlRow;
 
@@ -44,6 +47,8 @@ pub enum RowInner {
     Postgres(PgRow),
     #[cfg(feature = "mysql")]
     Mysql(MySqlRow),
+    #[cfg(any(feature = "turso", feature = "turso-sync"))]
+    Turso(TursoOwnedRow),
 }
 
 #[cfg(feature = "sqlite")]
@@ -87,6 +92,15 @@ impl From<MySqlRow> for Row {
     fn from(r: MySqlRow) -> Row {
         Row {
             inner: RowInner::Mysql(r),
+        }
+    }
+}
+
+#[cfg(any(feature = "turso", feature = "turso-sync"))]
+impl From<TursoOwnedRow> for Row {
+    fn from(r: TursoOwnedRow) -> Row {
+        Row {
+            inner: RowInner::Turso(r),
         }
     }
 }
@@ -150,6 +164,8 @@ impl Row {
             RowInner::Postgres(r) => r.try_column(name).is_ok(),
             #[cfg(feature = "mysql")]
             RowInner::Mysql(r) => r.try_column(name).is_ok(),
+            #[cfg(any(feature = "turso", feature = "turso-sync"))]
+            RowInner::Turso(r) => r.columns.iter().any(|c| c == name),
         }
     }
 
@@ -167,6 +183,8 @@ impl Row {
             RowInner::Postgres(r) => r.try_column(index).is_ok(),
             #[cfg(feature = "mysql")]
             RowInner::Mysql(r) => r.try_column(index).is_ok(),
+            #[cfg(any(feature = "turso", feature = "turso-sync"))]
+            RowInner::Turso(r) => r.data.get(index).is_some(),
         }
     }
 }

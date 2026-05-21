@@ -27,6 +27,10 @@ pub enum AnyClient {
     Mysql(crate::mysql::MysqlClient),
     #[cfg(feature = "mssql")]
     Mssql(crate::mssql::MssqlClient),
+    #[cfg(feature = "turso")]
+    Turso(crate::turso::TursoClient),
+    #[cfg(feature = "turso-sync")]
+    TursoSync(crate::turso::TursoSyncClient),
     #[cfg(feature = "noop")]
     Noop(crate::noop::NoopClient),
 }
@@ -47,6 +51,10 @@ impl Client for AnyClient {
             AnyClient::Mysql(c) => c.execute(sql, params).await,
             #[cfg(feature = "mssql")]
             AnyClient::Mssql(c) => c.execute(sql, params).await,
+            #[cfg(feature = "turso")]
+            AnyClient::Turso(c) => c.execute(sql, params).await,
+            #[cfg(feature = "turso-sync")]
+            AnyClient::TursoSync(c) => c.execute(sql, params),
             #[cfg(feature = "noop")]
             AnyClient::Noop(c) => c.execute(sql, params).await,
         }
@@ -65,6 +73,10 @@ impl Client for AnyClient {
             AnyClient::Mysql(c) => c.fetch_rows(sql, params).await,
             #[cfg(feature = "mssql")]
             AnyClient::Mssql(c) => c.fetch_rows(sql, params).await,
+            #[cfg(feature = "turso")]
+            AnyClient::Turso(c) => c.fetch_rows(sql, params).await,
+            #[cfg(feature = "turso-sync")]
+            AnyClient::TursoSync(c) => c.fetch_rows(sql, params),
             #[cfg(feature = "noop")]
             AnyClient::Noop(c) => c.fetch_rows(sql, params).await,
         }
@@ -86,6 +98,10 @@ impl Client for AnyClient {
             AnyClient::Mysql(c) => c.fetch_many(args).await,
             #[cfg(feature = "mssql")]
             AnyClient::Mssql(c) => c.fetch_many(args).await,
+            #[cfg(feature = "turso")]
+            AnyClient::Turso(c) => c.fetch_many(args).await,
+            #[cfg(feature = "turso-sync")]
+            AnyClient::TursoSync(c) => c.fetch_many(args),
             #[cfg(feature = "noop")]
             AnyClient::Noop(c) => c.fetch_many(args).await,
         }
@@ -104,6 +120,10 @@ impl Client for AnyClient {
             AnyClient::Mysql(c) => c.syntax(),
             #[cfg(feature = "mssql")]
             AnyClient::Mssql(c) => c.syntax(),
+            #[cfg(feature = "turso")]
+            AnyClient::Turso(c) => c.syntax(),
+            #[cfg(feature = "turso-sync")]
+            AnyClient::TursoSync(c) => c.syntax(),
             #[cfg(feature = "noop")]
             AnyClient::Noop(c) => c.syntax(),
         }
@@ -132,6 +152,10 @@ impl StreamClient for AnyClient {
             AnyClient::Mysql(c) => c.stream(sql, params).await,
             #[cfg(feature = "mssql")]
             AnyClient::Mssql(c) => c.stream(sql, params).await,
+            #[cfg(feature = "turso")]
+            AnyClient::Turso(_) => {
+                unimplemented!("StreamClient is not yet implemented for the Turso backend")
+            }
             #[cfg(feature = "noop")]
             AnyClient::Noop(c) => c.stream(sql, params).await,
         }
@@ -153,6 +177,10 @@ impl TransactStart for AnyClient {
             AnyClient::Mysql(c) => c.begin().await,
             #[cfg(feature = "mssql")]
             AnyClient::Mssql(c) => c.begin().await,
+            #[cfg(feature = "turso")]
+            AnyClient::Turso(c) => c.begin().await,
+            #[cfg(feature = "turso-sync")]
+            AnyClient::TursoSync(c) => c.begin(),
             #[cfg(feature = "noop")]
             AnyClient::Noop(_) => panic!("transaction not supporting in test mode"),
         }
