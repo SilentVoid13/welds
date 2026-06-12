@@ -47,7 +47,7 @@ sqlx = { version = "0.8", features = [], optional = true }
 # NOTE: we *need* to pin rusqlite to 0.32.x due to libsqlite-sys version incompatibilities conflicting with sqlx's
 # When sqlx is updated, we will need to re-verify this constraint
 rusqlite = { version = "=0.32", optional = true }
-turso = { git = "https://github.com/tursodatabase/turso.git", rev = "43debac215c828e27c31c7aa7e14ce7bc4ab47b4", optional = true }
+turso = { git = "https://github.com/tursodatabase/turso.git", optional = true }
 chrono = { version = "0.4", default-features = false, features = ["std"], optional = true }
 uuid = { version = "1", default-features = false, features = ["std"], optional = true }
 tracing = { version = "0.1", optional = true }
